@@ -86,7 +86,7 @@ def get_data(start):
 DATA = []
 start = 0
 items_per_page = 18  # Number of items per page
-max_pages = 2  # Maximum number of pages to fetch
+max_pages = 1  # Maximum number of pages to fetch
 max_items = items_per_page * max_pages  # Maximum number of items to fetch
 
 with ThreadPoolExecutor() as executor:
