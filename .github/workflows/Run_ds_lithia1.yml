@@ -27,4 +27,4 @@ jobs:
         CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
         TENANT_ID: ${{ secrets.TENANT_ID }}
       run: python Lithia.py
-      working-directory: ${{ github.workspace }}
+      # working-directory: ${{ github.workspace }}
