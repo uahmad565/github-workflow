@@ -303,11 +303,19 @@ def upload_file_to_mssql(connection_string, df, table_name):
 df = data_formatting(df)
 
 # upload dataframe to sql server
-SERVER_NAME = 'usmandev.eastus.cloudapp.azure.com'
-DATABASE_NAME = 'ShopDb'
-TABLE_NAME = 'VehicleInventory'
-USERNAME = 'sa'  # Replace with your SQL Server username
-PASSWORD = 'webdir123R'      # Replace with your SQL Server password
+SERVER_NAME = os.environ['SERVER_NAME']
+DATABASE_NAME = os.environ['DATABASE_NAME']
+TABLE_NAME = os.environ['TABLE_NAME']
+USERNAME = os.environ['USERNAME']
+PASSWORD = os.environ['PASSWORD']
+
+
+
+# SERVER_NAME = 'usmandev.eastus.cloudapp.azure.com'
+# DATABASE_NAME = 'ShopDb'
+# TABLE_NAME = 'VehicleInventory'
+# USERNAME = 'sa'  # Replace with your SQL Server username
+# PASSWORD = 'webdir123R'      # Replace with your SQL Server password
 
 connection_string = f"""
     DRIVER={{ODBC Driver 17 for SQL Server}};
