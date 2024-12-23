@@ -86,7 +86,7 @@ def get_data(start):
 DATA = []
 start = 0
 items_per_page = 18  # Number of items per page
-max_pages = 1  # Maximum number of pages to fetch
+max_pages = 2000  # Maximum number of pages to fetch
 max_items = items_per_page * max_pages  # Maximum number of items to fetch
 
 with ThreadPoolExecutor() as executor:
@@ -308,14 +308,6 @@ DATABASE_NAME = os.environ['DATABASE_NAME']
 TABLE_NAME = os.environ['TABLE_NAME']
 USERNAME = os.environ['USERNAME']
 PASSWORD = os.environ['PASSWORD']
-
-
-
-# SERVER_NAME = 'usmandev.eastus.cloudapp.azure.com'
-# DATABASE_NAME = 'ShopDb'
-# TABLE_NAME = 'VehicleInventory'
-# USERNAME = 'sa'  # Replace with your SQL Server username
-# PASSWORD = 'webdir123R'      # Replace with your SQL Server password
 
 connection_string = f"""
     DRIVER={{ODBC Driver 17 for SQL Server}};
