@@ -23,8 +23,10 @@ jobs:
 
     - name: Run scraper
       env:
-        CLIENT_ID: ${{ secrets.CLIENT_ID }}
-        CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
-        TENANT_ID: ${{ secrets.TENANT_ID }}
+        DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+        PASSWORD: ${{ secrets.PASSWORD }}
+        SERVER_NAME: ${{ secrets.SERVER_NAME }}
+        TABLE_NAME: ${{ secrets.TABLE_NAME }}
+        USERNAME: ${{ secrets.USERNAME }}        
       run: python Lithia.py
       # working-directory: ${{ github.workspace }}
