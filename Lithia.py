@@ -1,10 +1,8 @@
-
+from msal import ConfidentialClientApplication
+import struct
 import pandas as pd
-# New imports Start
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import URL
-import pypyodbc # pip install pypyodbc
-# New imports End
 from concurrent.futures import ThreadPoolExecutor
 import time
 import requests
@@ -86,7 +84,7 @@ def get_data(start):
 DATA = []
 start = 0
 items_per_page = 18  # Number of items per page
-max_pages = 2000  # Maximum number of pages to fetch
+max_pages = 1  # Maximum number of pages to fetch
 max_items = items_per_page * max_pages  # Maximum number of items to fetch
 
 with ThreadPoolExecutor() as executor:
@@ -102,7 +100,7 @@ df = pd.json_normalize(DATA)
 
 
 # Get current date
-current_date = datetime.now().strftime('%Y-%m-%d')
+current_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 df['run_date'] = current_date  # Add run date column
 
 # Add dealership column
@@ -277,48 +275,61 @@ def create_table_from_dataframe(df, engine, table_name):
         connection.execute(text(ddl)) 
 
 
-def upload_file_to_mssql(connection_string, df, table_name):    
+def upload_file_to_mssql(connection_string, df, table_name, tokenstruct):    
     connection_url = URL.create('mssql+pyodbc', query={'odbc_connect': connection_string})
-    engine = create_engine(connection_url, module=pypyodbc)
+    engine = create_engine(connection_url, connect_args={'attrs_before': {SQL_COPT_SS_ACCESS_TOKEN:tokenstruct}})   
     inspector = inspect(engine)
-     # Check if the table already exists
+    # Check if the table already exists
     if inspector.has_table(table_name):
-        # Fetch existing data from the table
-        existing_df = pd.read_sql(f"SELECT * FROM {table_name}", engine)
-
-        # Find new rows (i.e., rows that don't already exist)
-        df_new = df[~df.isin(existing_df)].dropna()
-
-        # Insert only new data into the table
-        df_new.to_sql(table_name, engine, if_exists='append', index=False)
+        print("Table already exist, going to append data to the table.")
+        df.to_sql(table_name, engine, if_exists='append', index=False)
     else:
         print("Table does not exist, going to create a new table.")
-        create_table_from_dataframe(df, engine, TABLE_NAME)
+        create_table_from_dataframe(df, engine, AZURE_SQL_TABLE_NAME)
         print("Table created successfully.")
-        df.to_sql(table_name, engine, if_exists='append', index=False)
-        
+        df.to_sql(table_name, engine, if_exists='append', index=False)     
 
 
 
 df = data_formatting(df)
 
 # upload dataframe to sql server
-SERVER_NAME = os.environ['SERVER_NAME']
-DATABASE_NAME = os.environ['DATABASE_NAME']
-TABLE_NAME = os.environ['TABLE_NAME']
-USERNAME = os.environ['USERNAME']
-PASSWORD = os.environ['PASSWORD']
+AZURE_SQL_SERVER = os.environ['AZURE_SQL_SERVER']
+AZURE_SQL_DATABASE = os.environ['AZURE_SQL_DATABASE']
+AZURE_SQL_TABLE_NAME = os.environ['AZURE_SQL_TABLE_NAME']
 
+AZURE_SP_CLIENT_ID = os.environ['AZURE_SP_CLIENT_ID']
+AZURE_SP_AUTHORITY = os.environ['AZURE_SP_AUTHORITY']
+AZURE_SP_CLIENT_SECRET = os.environ['AZURE_SP_CLIENT_SECRET']
+
+# Get Token From Azure Service Principal
+creds = ConfidentialClientApplication(
+    client_id = AZURE_SP_CLIENT_ID, 
+    authority = AZURE_SP_AUTHORITY,
+    client_credential = AZURE_SP_CLIENT_SECRET)
+
+token = creds.acquire_token_for_client(scopes=['https://database.windows.net//.default'])
+
+# Create Token Struct
+SQL_COPT_SS_ACCESS_TOKEN = 1256 
+tokenb = bytes(token["access_token"], "UTF-8")
+exptoken = b'';
+for i in tokenb:
+    exptoken += bytes({i});
+    exptoken += bytes(1);
+tokenstruct = struct.pack("=i", len(exptoken)) + exptoken;
+
+# Get SqlAlchemy Engine for Azure SQL Operations
 connection_string = f"""
     DRIVER={{ODBC Driver 17 for SQL Server}};
-    SERVER={SERVER_NAME};
-    DATABASE={DATABASE_NAME};
-    UID={USERNAME};
-    PWD={PASSWORD};
+    SERVER={AZURE_SQL_SERVER};
+    DATABASE={AZURE_SQL_DATABASE};
+    Trusted_Connection=no;
 """
+# conn = pyodbc.connect(connection_string, attrs_before = { SQL_COPT_SS_ACCESS_TOKEN:tokenstruct});
 try:
-    upload_file_to_mssql(connection_string, df, TABLE_NAME)
-    print(f"Data successfully stored in table '{TABLE_NAME}'")
+    upload_file_to_mssql(connection_string, df, AZURE_SQL_TABLE_NAME, tokenstruct)
+    print(f"Data successfully stored in table '{AZURE_SQL_TABLE_NAME}'")
 except Exception as e:
     print(f"Upload sql server error: {e}")
 
