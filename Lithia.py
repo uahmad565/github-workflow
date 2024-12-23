@@ -86,7 +86,7 @@ def get_data(start):
 DATA = []
 start = 0
 items_per_page = 18  # Number of items per page
-max_pages = 2000  # Maximum number of pages to fetch
+max_pages = 2  # Maximum number of pages to fetch
 max_items = items_per_page * max_pages  # Maximum number of items to fetch
 
 with ThreadPoolExecutor() as executor:
@@ -310,7 +310,7 @@ USERNAME = 'sa'  # Replace with your SQL Server username
 PASSWORD = 'webdir123R'      # Replace with your SQL Server password
 
 connection_string = f"""
-    DRIVER={{SQL Server}};
+    DRIVER={{ODBC Driver 17 for SQL Server}};
     SERVER={SERVER_NAME};
     DATABASE={DATABASE_NAME};
     UID={USERNAME};
