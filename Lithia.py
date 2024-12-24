@@ -1,6 +1,7 @@
 from msal import ConfidentialClientApplication
 import struct
 import pandas as pd
+import pyodbc
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import URL
 from concurrent.futures import ThreadPoolExecutor
@@ -9,6 +10,48 @@ import requests
 from datetime import datetime
 import os
 import re
+
+
+AZURE_SQL_SERVER = os.environ['AZURE_SQL_SERVER']
+AZURE_SQL_DATABASE = os.environ['AZURE_SQL_DATABASE']
+AZURE_SQL_TABLE_NAME = os.environ['AZURE_SQL_TABLE_NAME']
+
+AZURE_SP_CLIENT_ID = os.environ['AZURE_SP_CLIENT_ID']
+AZURE_SP_AUTHORITY = os.environ['AZURE_SP_AUTHORITY']
+AZURE_SP_CLIENT_SECRET = os.environ['AZURE_SP_CLIENT_SECRET']
+
+# Get Token From Azure Service Principal
+creds = ConfidentialClientApplication(
+    client_id = AZURE_SP_CLIENT_ID, 
+    authority = AZURE_SP_AUTHORITY,
+    client_credential = AZURE_SP_CLIENT_SECRET)
+
+token = creds.acquire_token_for_client(scopes=['https://database.windows.net//.default'])
+
+# Create Token Struct
+SQL_COPT_SS_ACCESS_TOKEN = 1256 
+tokenb = bytes(token["access_token"], "UTF-8")
+exptoken = b'';
+for i in tokenb:
+    exptoken += bytes({i});
+    exptoken += bytes(1);
+tokenstruct = struct.pack("=i", len(exptoken)) + exptoken;
+
+# Get SqlAlchemy Engine for Azure SQL Operations
+connection_string = f"""
+    DRIVER={{ODBC Driver 17 for SQL Server}};
+    SERVER={AZURE_SQL_SERVER};
+    DATABASE={AZURE_SQL_DATABASE};
+    Trusted_Connection=no;
+"""
+# Test Connection to Azure SQL Server
+try:
+    connectionPyodbc = pyodbc.connect(connection_string, attrs_before = { SQL_COPT_SS_ACCESS_TOKEN:tokenstruct});
+    print("Connection to SQL Server successful")
+except Exception as e:
+    print(f"Connection to SQL Server failed: {e}")
+    exit()
+
 
 # Headers for Lithia's API
 headers = {
@@ -294,39 +337,6 @@ def upload_file_to_mssql(connection_string, df, table_name, tokenstruct):
 df = data_formatting(df)
 
 # upload dataframe to sql server
-AZURE_SQL_SERVER = os.environ['AZURE_SQL_SERVER']
-AZURE_SQL_DATABASE = os.environ['AZURE_SQL_DATABASE']
-AZURE_SQL_TABLE_NAME = os.environ['AZURE_SQL_TABLE_NAME']
-
-AZURE_SP_CLIENT_ID = os.environ['AZURE_SP_CLIENT_ID']
-AZURE_SP_AUTHORITY = os.environ['AZURE_SP_AUTHORITY']
-AZURE_SP_CLIENT_SECRET = os.environ['AZURE_SP_CLIENT_SECRET']
-
-# Get Token From Azure Service Principal
-creds = ConfidentialClientApplication(
-    client_id = AZURE_SP_CLIENT_ID, 
-    authority = AZURE_SP_AUTHORITY,
-    client_credential = AZURE_SP_CLIENT_SECRET)
-
-token = creds.acquire_token_for_client(scopes=['https://database.windows.net//.default'])
-
-# Create Token Struct
-SQL_COPT_SS_ACCESS_TOKEN = 1256 
-tokenb = bytes(token["access_token"], "UTF-8")
-exptoken = b'';
-for i in tokenb:
-    exptoken += bytes({i});
-    exptoken += bytes(1);
-tokenstruct = struct.pack("=i", len(exptoken)) + exptoken;
-
-# Get SqlAlchemy Engine for Azure SQL Operations
-connection_string = f"""
-    DRIVER={{ODBC Driver 17 for SQL Server}};
-    SERVER={AZURE_SQL_SERVER};
-    DATABASE={AZURE_SQL_DATABASE};
-    Trusted_Connection=no;
-"""
-# conn = pyodbc.connect(connection_string, attrs_before = { SQL_COPT_SS_ACCESS_TOKEN:tokenstruct});
 try:
     upload_file_to_mssql(connection_string, df, AZURE_SQL_TABLE_NAME, tokenstruct)
     print(f"Data successfully stored in table '{AZURE_SQL_TABLE_NAME}'")
