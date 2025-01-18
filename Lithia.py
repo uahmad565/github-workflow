@@ -11,6 +11,9 @@ from datetime import datetime
 import os
 import re
 import requests
+from azure.identity import ClientSecretCredential
+from azure.mgmt.sql import SqlManagementClient
+
 
 def get_runner_ip():
     try:
@@ -22,8 +25,38 @@ def get_runner_ip():
             return "Unable to fetch IP: HTTP Status " + str(response.status_code)
     except Exception as e:
         return f"Error fetching IP: {str(e)}"
+my_ip = get_runner_ip()
+print(f"Runner IP: {my_ip}")
 
-print(f"Runner IP: {get_runner_ip()}")
+# Azure credentials
+tenant_id = os.environ['AZURE_TENANT_ID']
+client_id = os.environ['AZURE_SP_CLIENT_ID']
+client_secret = os.environ['AZURE_SP_CLIENT_SECRET']
+subscription_id = os.environ['AZURE_SUBSCRIPTION_ID']
+# Azure SQL server details
+resource_group_name = os.environ['AZURE_RESOURCE_GROUP_NAME']
+sql_server_name = os.environ['AZURE_SQLSERVER_RESOURCE_NAME']
+firewall_rule_name = "AllowMyIP1"
+# start_ip_address = "192.168.1.1"  # Replace with your IP
+# end_ip_address = "192.168.1.1"    # Replace with your IP (same for single IP)
+
+# Authenticate
+credential = ClientSecretCredential(tenant_id, client_id, client_secret)
+sql_client = SqlManagementClient(credential, subscription_id)
+
+# Create or update firewall rule
+firewall_rule = sql_client.firewall_rules.create_or_update(
+    resource_group_name,
+    sql_server_name,
+    firewall_rule_name,
+    {
+        "start_ip_address": my_ip,
+        "end_ip_address": my_ip,
+    }
+)
+
+print(f"Firewall rule '{firewall_rule.name}' created: {firewall_rule.start_ip_address}-{firewall_rule.end_ip_address}")
+
 
 AZURE_SQL_SERVER = os.environ['AZURE_SQL_SERVER']
 AZURE_SQL_DATABASE = os.environ['AZURE_SQL_DATABASE']

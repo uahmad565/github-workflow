@@ -19,7 +19,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pandas sqlalchemy msal requests pyodbc
+        pip install pandas sqlalchemy msal requests pyodbc ClientSecretCredential SqlManagementClient
 
     - name: Run scraper
       env:
@@ -29,6 +29,10 @@ jobs:
 
         AZURE_SP_CLIENT_ID: ${{ secrets.AZURE_SP_CLIENT_ID }}
         AZURE_SP_AUTHORITY: ${{ secrets.AZURE_SP_AUTHORITY }} 
-        AZURE_SP_CLIENT_SECRET: ${{ secrets.AZURE_SP_CLIENT_SECRET }}        
+        AZURE_SP_CLIENT_SECRET: ${{ secrets.AZURE_SP_CLIENT_SECRET }}
+        AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        AZURE_RESOURCE_GROUP_NAME: ${{ secrets.AZURE_RESOURCE_GROUP_NAME }}
+        AZURE_SQLSERVER_RESOURCE_NAME: ${{ secrets.AZURE_SQLSERVER_RESOURCE_NAME }}
       run: python Lithia.py
       # working-directory: ${{ github.workspace }}
