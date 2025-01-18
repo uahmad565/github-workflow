@@ -90,13 +90,20 @@ connection_string = f"""
     DATABASE={AZURE_SQL_DATABASE};
     Trusted_Connection=no;
 """
-# Test Connection to Azure SQL Server
-try:
-    connectionPyodbc = pyodbc.connect(connection_string, attrs_before = { SQL_COPT_SS_ACCESS_TOKEN:tokenstruct});
-    print("Connection to SQL Server successful")
-except Exception as e:
-    print(f"Connection to SQL Server failed: {e}")
-    exit()
+# Test Connection to Azure SQL Server with Wait and retry mechanism to ensure rule is propagated
+max_retries = 3
+wait_time = 10
+for attempt in range(max_retries): 
+    try:
+        time.sleep(wait_time)
+        connectionPyodbc = pyodbc.connect(connection_string, attrs_before = { SQL_COPT_SS_ACCESS_TOKEN:tokenstruct});
+        print("Connection to SQL Server successful")
+        break
+    except Exception as e:
+        print(f"try {attempt} connection to SQL Server failed: {e}")
+        if attempt == max_retries - 1:
+            print("Connection to SQL Server failed after max retries")
+            exit()
 
 
 # Headers for Lithia's API
