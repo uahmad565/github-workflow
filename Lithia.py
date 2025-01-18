@@ -10,7 +10,20 @@ import requests
 from datetime import datetime
 import os
 import re
+import requests
 
+def get_runner_ip():
+    try:
+        # Using an external service to get the public IP
+        response = requests.get("https://api.ipify.org", timeout=5)
+        if response.status_code == 200:
+            return response.text
+        else:
+            return "Unable to fetch IP: HTTP Status " + str(response.status_code)
+    except Exception as e:
+        return f"Error fetching IP: {str(e)}"
+
+print(f"Runner IP: {get_runner_ip()}")
 
 AZURE_SQL_SERVER = os.environ['AZURE_SQL_SERVER']
 AZURE_SQL_DATABASE = os.environ['AZURE_SQL_DATABASE']
