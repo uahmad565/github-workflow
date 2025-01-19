@@ -21,7 +21,6 @@ jobs:
         ODBC_VERSION: 17
         DISTRO: Alpine  # Adjust this to the runner's actual Linux distribution (use Ubuntu for `ubuntu-latest`)
         REMOVE_EXITS: true
-        DOCS_URL: https://yarden-zamir.com/alternate-docs-path.md  # Optional, leave as is if unsure
 
     - name: Run scraper
       env:
